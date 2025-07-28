@@ -1,3 +1,4 @@
+import { useDebounce } from "react-use";
 import { useEffect, useState } from "react";
 import "./App.css";
 import Spinner from "./Components/spinner";
@@ -18,12 +19,16 @@ function App() {
   const [errorMessage, setErrorMessage] = useState("");
   const [movieList, setMovieList] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const fetchMovies = async () => {
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+  useDebounce(() => setDebouncedSearchTerm(searchTerm), 500, [searchTerm]);
+  const fetchMovies = async (query = "") => {
     setIsLoading(true);
     setErrorMessage("");
 
     try {
-      const endpoint = `${API_BASE_URL}/discover/movie?sort_by=popularity.desc`;
+      const endpoint = query
+        ? `${API_BASE_URL}/search/movie?query=${encodeURIComponent(query)}`
+        : `${API_BASE_URL}/discover/movie?sort_by=popularity.desc`;
       const response = await fetch(endpoint, API_OPTIONS);
       if (!response.ok) {
         throw new Error("Failed to fetch movies");
@@ -42,8 +47,8 @@ function App() {
     }
   };
   useEffect(() => {
-    fetchMovies();
-  }, []);
+    fetchMovies(debouncedSearchTerm);
+  }, [debouncedSearchTerm]);
   return (
     <>
       <main>
@@ -56,7 +61,6 @@ function App() {
                 Without the Hassle
               </h1>
               <Search SearchTerm={searchTerm} setSearchTerm={setSearchTerm} />
-              <h1 className="text-white">{searchTerm}</h1>
             </header>
             <section className="all-movies">
               <h2>All Movies</h2>
